@@ -27,26 +27,28 @@ def process_cityscapes(gtFine_dir, leftImg8bit_dir, output_dir, phase):
     segmap_expr = os.path.join(gtFine_dir, phase) + "/*/*.png"
     segmap_paths = glob.glob(segmap_expr)
     segmap_paths = sorted(segmap_paths)
-    print(segmap_paths)
 
     photo_expr = os.path.join(leftImg8bit_dir, phase) + "/*.jpeg"
     photo_paths = glob.glob(photo_expr)
     photo_paths = sorted(photo_paths)
-    print(photo_expr)
-    print(photo_paths)
 
-    for i, (segmap_path, photo_path) in enumerate(zip(segmap_paths, photo_paths)):
-        segmap = load_resized_img(segmap_path)
-        photo = load_resized_img(photo_path)
-
-        # data for cyclegan where the two images are stored at two distinct directories
+    for i, (photo_path) in enumerate(zip(photo_paths)):
+        photo = load_resized_img(photo_path[0])
         savepath = os.path.join(savedir + 'A', "%d_A.jpg" % i)
         photo.save(savepath, format='JPEG', subsampling=0, quality=100)
+        
+        if i % (len(photo_paths) // 10) == 0:
+            print("%d / %d: last image saved at %s, " % (i, len(photo_paths), savepath))
+
+    for i, (segmap_path) in enumerate(zip(segmap_paths)):
+        segmap = load_resized_img(segmap_path[0])
         savepath = os.path.join(savedir + 'B', "%d_B.jpg" % i)
         segmap.save(savepath, format='JPEG', subsampling=0, quality=100)
         
         if i % (len(segmap_paths) // 10) == 0:
             print("%d / %d: last image saved at %s, " % (i, len(segmap_paths), savepath))
+
+
 
 
         
