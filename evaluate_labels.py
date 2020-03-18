@@ -42,20 +42,34 @@ label_colors = [
         ]
 
 
+# NOTE, This function computes the jacard index
 def calc_per_pixel_accuracy(f_path, r_path, nn):
     f_img = np.array(Image.open(f_path).convert("RGB"))
     r_img = np.array(Image.open(r_path).convert("RGB"))
     r, c, l = f_img.shape
 
+    area_of_overlap = np.zeros(30)
+    area_of_union = np.zeros(30)
     num = 0
     for i in range(0, r):
         for j in range(0, c):
             f_neigh = nn.kneighbors([f_img[i][j]])
             r_neigh = nn.kneighbors([r_img[i][j]])
-            if f_neigh[1][0][0] == r_neigh[1][0][0]:
+            f_class = f_neigh[1][0][0]
+            r_class = r_neigh[1][0][0]
+            if f_class == r_class:
                 num = num + 1
+                area_of_union[f_class] = area_of_union[f_class] + 1
+                area_of_overlap[f_class] = area_of_overlap[f_class] + 1
+            else:
+                area_of_union[f_class] = area_of_union[f_class] + 1
+                area_of_union[r_class] = area_of_union[r_class] + 1
 
-    return num/(r*c)
+    results = np.zeros(30)
+    for i in range(0, 30):
+        results[i] = area_of_overlap[i]/(area_of_union[i] + 0.0000001)
+
+    return np.average(results), num/(r*c)
 
 def check_matching_pair(f_path, r_path):
     f_identifier = os.path.basename(f_path).replace('_fake_B', '')
@@ -68,7 +82,8 @@ def process_labels(input_dir, results_dir):
     os.makedirs(results_dir, exist_ok=True)
     results_path = results_dir + "results.txt"
     print(results_path)
-    results_list = []
+    PPA_list = []
+    IoU_list = []
     f = open(results_path, "w")
     print("Creating Results dir as %s" % results_dir)
 
@@ -87,19 +102,33 @@ def process_labels(input_dir, results_dir):
     for i, (fake_path, real_path) in enumerate(zip(fake_paths, real_paths)):
         check_matching_pair(fake_path, real_path)
         print(fake_path, real_path)
-        val = calc_per_pixel_accuracy(fake_path, real_path, nn)
-        results_list.append(val)
-        f.write(str(val))
+        IoU, PPA = calc_per_pixel_accuracy(fake_path, real_path, nn)
+        print(IoU, PPA)
+        IoU_list.append(IoU)
+        PPA_list.append(PPA)
+        f.write("Image ")
+        f.write(str(i))
+        f.write("\n")
+        f.write("PPA: ")
+        f.write(str(PPA))
+        f.write("\n")
+        f.write("IoU: ")
+        f.write(str(IoU))
         f.write("\n")
 
         if i % ((len(fake_paths) // 10) + 1) == 0:
             print("%d / %d: last image saved at %s, " % (i, len(fake_paths), results_path))
  
-    avg = np.average(results_list)
-    print(results_list)
+    avg_PPA = np.average(PPA_list)
+    avg_IoU = np.average(IoU_list)
+    print("PPA Average: " ,PPA_list)
+    print("IoU Average: " ,IoU_list)
 
-    f.write("Average Accuracy:")
-    f.write(str(avg))
+    f.write("Average PPA: ")
+    f.write(str(avg_PPA))
+    f.write("\n")
+    f.write("Average IoU: ")
+    f.write(str(avg_IoU))
     f.write("\n")
 
     f.close()
