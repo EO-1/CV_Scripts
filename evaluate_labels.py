@@ -69,6 +69,10 @@ def calc_per_pixel_accuracy(f_path, r_path, nn):
     for i in range(0, 30):
         results[i] = area_of_overlap[i]/(area_of_union[i] + 0.0000001)
 
+    # Remove the void class
+    results = np.delete(results, 0)
+    print(results.shape)
+
     return np.average(results), num/(r*c)
 
 def check_matching_pair(f_path, r_path):
