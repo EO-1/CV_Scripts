@@ -1,6 +1,7 @@
 import os
 import glob
 from PIL import Image
+import random
 
 help_msg = """
 The dataset can be downloaded from https://cityscapes-dataset.com.
@@ -17,7 +18,7 @@ python prepare_cityscapes_dataset.py --gitFine_dir <B Directory> --leftImg8bit_d
 def load_resized_img(path):
     return Image.open(path).convert('RGB').resize((256, 256))
 
-def process_cityscapes(gtFine_dir, leftImg8bit_dir, output_dir, phase):
+def process_cityscapes(gtFine_dir, leftImg8bit_dir, output_dir, num_cs,  phase):
     save_phase = 'test' if phase == 'val' else 'train'
     savedir = os.path.join(output_dir, save_phase)
     os.makedirs(savedir + 'A', exist_ok=True)
@@ -26,7 +27,7 @@ def process_cityscapes(gtFine_dir, leftImg8bit_dir, output_dir, phase):
     
     segmap_expr = os.path.join(gtFine_dir, phase) + "/*/*.png"
     segmap_paths = glob.glob(segmap_expr)
-    segmap_paths = sorted(segmap_paths)
+    random.shuffle(segmap_paths)
 
     photo_expr = os.path.join(leftImg8bit_dir, phase) + "/*.jpeg"
     photo_paths = glob.glob(photo_expr)
@@ -41,12 +42,15 @@ def process_cityscapes(gtFine_dir, leftImg8bit_dir, output_dir, phase):
             print("%d / %d: last image saved at %s, " % (i, len(photo_paths), savepath))
 
     for i, (segmap_path) in enumerate(zip(segmap_paths)):
+        if i >= num_cs:
+            break
         segmap = load_resized_img(segmap_path[0])
         savepath = os.path.join(savedir + 'B', "%d_B.jpg" % i)
         segmap.save(savepath, format='JPEG', subsampling=0, quality=100)
         
         if i % (len(segmap_paths) // 10) == 0:
             print("%d / %d: last image saved at %s, " % (i, len(segmap_paths), savepath))
+
 
 
 
@@ -66,6 +70,8 @@ if __name__ == '__main__':
                         help='Path to the Cityscapes gtFine directory.')
     parser.add_argument('--leftImg8bit_dir', type=str, required=True,
                         help='Path to the Cityscapes leftImg8bit_trainvaltest directory.')
+    parser.add_argument('--num_cs', type=int, required=True,
+                        help='number of cityscapes images to use')
     parser.add_argument('--output_dir', type=str, required=True,
                         default='./datasets/cityscapes',
                         help='Directory the output images will be written to.')
@@ -74,9 +80,9 @@ if __name__ == '__main__':
     print(help_msg)
     
     print('Preparing Cityscapes Dataset for val phase')
-    process_cityscapes(opt.gtFine_dir, opt.leftImg8bit_dir, opt.output_dir, "val")
+    process_cityscapes(opt.gtFine_dir, opt.leftImg8bit_dir, opt.output_dir, opt.num_cs, "val")
     print('Preparing Cityscapes Dataset for train phase')
-    process_cityscapes(opt.gtFine_dir, opt.leftImg8bit_dir, opt.output_dir, "train")
+    process_cityscapes(opt.gtFine_dir, opt.leftImg8bit_dir, opt.output_dir, opt.num_cs, "train")
 
     print('Done')
 
