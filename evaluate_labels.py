@@ -103,11 +103,9 @@ def calc_per_pixel_accuracy(f_path, r_path, nn):
         results[i] = area_of_overlap[i]/(area_of_union[i] + 0.0000001)
 
     # Remove the void class
-    print(results)
     filtered_results = np.delete(results, 0)
     # Remove the dynamic void class
     filtered_results = np.delete(filtered_results, 0)
-    print(filtered_results)
 
     return np.average(filtered_results), num/(r*c), results
 
@@ -162,7 +160,6 @@ def process_labels(input_dir, results_dir):
         f.write("IoU per class: ")
         f.write(str(per_class_IoU))
         f.write("\n\n")
-        break
 
         if i % ((len(fake_paths) // 10) + 1) == 0:
             print("%d / %d: last image saved at %s, " % (i, len(fake_paths), results_path))
