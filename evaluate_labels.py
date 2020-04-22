@@ -83,17 +83,23 @@ def calc_per_pixel_accuracy(f_path, r_path, nn):
 
     area_of_overlap = np.zeros(30)
     area_of_union = np.zeros(30)
-    num = 0
+    total_non_void_pixels_correct = 0
+    total_non_void_pixels = 0
     for i in range(0, r):
         for j in range(0, c):
             f_neigh = nn.kneighbors([f_img[i][j]])
             r_neigh = nn.kneighbors([r_img[i][j]])
             f_class = f_neigh[1][0][0]
             r_class = r_neigh[1][0][0]
+            if r_class > 1:
+                total_non_void_pixels = total_non_void_pixels + 1
+            # correct
             if f_class == r_class:
-                num = num + 1
                 area_of_union[f_class] = area_of_union[f_class] + 1
                 area_of_overlap[f_class] = area_of_overlap[f_class] + 1
+                if r_class > 1:
+                    total_non_void_pixels_correct = total_non_void_pixels_correct + 1
+            # Incorrect
             else:
                 area_of_union[f_class] = area_of_union[f_class] + 1
                 area_of_union[r_class] = area_of_union[r_class] + 1
@@ -107,7 +113,7 @@ def calc_per_pixel_accuracy(f_path, r_path, nn):
     # Remove the dynamic void class
     filtered_results = np.delete(filtered_results, 0)
 
-    return np.average(filtered_results), num/(r*c), results
+    return np.average(filtered_results), total_non_void_pixels_correct/total_non_void_pixels, results
 
 def check_matching_pair(f_path, r_path):
     f_identifier = os.path.basename(f_path).replace('_fake_B', '')
