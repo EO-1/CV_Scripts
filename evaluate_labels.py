@@ -87,10 +87,14 @@ def calc_per_pixel_accuracy(f_path, r_path, nn):
     total_non_void_pixels = 0
     for i in range(0, r):
         for j in range(0, c):
-            f_neigh = nn.kneighbors([f_img[i][j]])
-            r_neigh = nn.kneighbors([r_img[i][j]])
-            f_class = f_neigh[1][0][0]
-            r_class = r_neigh[1][0][0]
+            f_dist, f_neigh = nn.kneighbors([f_img[i][j]])
+            r_dist, r_neigh = nn.kneighbors([r_img[i][j]])
+            f_class = f_neigh[0][0]
+            r_class = r_neigh[0][0]
+
+            if r_dist[0][0] > 35:
+                continue
+            
             if r_class > 1:
                 total_non_void_pixels = total_non_void_pixels + 1
             # correct
@@ -103,6 +107,7 @@ def calc_per_pixel_accuracy(f_path, r_path, nn):
             else:
                 area_of_union[f_class] = area_of_union[f_class] + 1
                 area_of_union[r_class] = area_of_union[r_class] + 1
+        quit()
 
     results = np.zeros(30)
     for i in range(0, 30):
